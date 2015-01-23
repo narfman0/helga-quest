@@ -4,7 +4,7 @@ import math, random
 class Being(object):
     """ Something that lives and breathes and can die """
     def __init__(self, name='Hero', hp=1, mana=1, attack=1, defense=1,
-                 magic=1, mr=1):
+                 magic=1, mr=1, level=1, xp=0):
         self.hp = hp
         self.mana = mana
         self.attack = attack
@@ -12,10 +12,10 @@ class Being(object):
         self.magic = magic
         self.mr = mr
         self.name = name
+        self.level = level
+        self.xp = xp
         self.hp_current = self.hp
         self.mana_current = self.mana
-        self.level = 1
-        self.xp = 0
 
     def do_attack(self, target):
         """ Weapon attack, returns dmg to be received. """
