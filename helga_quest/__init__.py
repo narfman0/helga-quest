@@ -5,5 +5,5 @@ VERSION = (1, 0, 0)
 
 __version__ = '.'.join([str(v) for v in VERSION])
 
-if not db.quest.hero:
-    db.quest.hero = Being()
+if db.quest.heroes.count() == 0:
+    db.quest.heroes.insert(Being().encode())

@@ -1,5 +1,5 @@
 """ Core classes to define rpg """
-import math, random
+import math, jaraco.modb as encoder, random
 
 class Being(object):
     """ Something that lives and breathes and can die """
@@ -47,7 +47,17 @@ class Being(object):
             self.mana_current = self.mana
 
     def __unicode__(self):
-        return self.name + ' HP: %d/%d' % self.hp_current, self.hp
+        return '{} HP: {}/{} Level: {}'.format(self.name, self.hp_current, self.hp, self.level)
+
+    def __repr__(self):
+        return self.__unicode__()
+
+    def encode(self):
+        return encoder.encode(self)
+
+    @staticmethod
+    def decode(target):
+        return encoder.decode(target)
 
     @staticmethod
     def xp_to_level(level):
@@ -59,4 +69,3 @@ class Being(object):
         else:
             xp = (65 * math.pow(level, 2) - 165 * level - 6750) * .82
         return xp
- 
