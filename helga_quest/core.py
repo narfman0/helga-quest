@@ -19,7 +19,7 @@ class Being(object):
 
     def do_attack(self, target):
         """ Weapon attack, returns dmg to be received. """
-        return self.attack * (100. / (100. + target.defense))
+        return round(self.attack * (100. / (100. + target.defense)), 1)
 
     def do_magic(self, target):
         """ Magic attack, returns dmg to be received. """

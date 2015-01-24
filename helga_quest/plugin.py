@@ -69,7 +69,9 @@ def quest(client, channel, nick, message, cmd, args):
             enemy.hp_current -= dmg
             if enemy.hp_current <= 0:
                 hero.killed(enemy)
-                db.quest.encounter.remove(enemy.encode())
+                db.quest.heroes.remove({'name':hero.name})
+                db.quest.heroes.insert(hero.encode())
+                db.quest.encounter.remove({'name':enemy.name})
                 response = "You've slain the {} and earned {} xp!".format(enemy.name, enemy.xp)
             else:
                 received_dmg = enemy.do_attack(enemy)
