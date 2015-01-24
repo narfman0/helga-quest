@@ -49,6 +49,8 @@ def quest(client, channel, nick, message, cmd, args):
             response = "You can't rest whilst in combat!"
         else:
             hero.hp_current = hero.hp
+            db.quest.heroes.remove({'name':hero.name})
+            db.quest.heroes.insert(hero.encode())
             response = 'You feel refreshed and ready for combat'
     elif args[0] == 'mob':
         stats = json.loads(args[2])
@@ -60,24 +62,27 @@ def quest(client, channel, nick, message, cmd, args):
     elif args[0] == "attack":
         if hero.hp_current <= 0:
             response = 'You must rest before exerting oneself!'
-        if not in_encounter:
+        elif not in_encounter:
             response = "There is no enemy to attack!"
-        dmg = hero.do_attack(enemy)
-        enemy.hp_current -= dmg
-        if enemy.hp_current <= 0:
-            hero.killed(enemy)
-            db.quest.encounter.remove(enemy.encode())
-            response = "You've slain the {} and earned {} xp!".format(enemy.name, enemy.xp)
         else:
-            received_dmg = enemy.do_attack(enemy)
-            hero.hp_current -= received_dmg
-            db.quest.heroes.update({'name':hero.name}, hero.encode())
-            if hero.hp_current <= 0:
-                db.quest.encounter.drop()
-                response = 'You have been slain!'
+            dmg = hero.do_attack(enemy)
+            enemy.hp_current -= dmg
+            if enemy.hp_current <= 0:
+                hero.killed(enemy)
+                db.quest.encounter.remove(enemy.encode())
+                response = "You've slain the {} and earned {} xp!".format(enemy.name, enemy.xp)
             else:
-                db.quest.encounter.update({'name':enemy.name}, enemy.encode())
-                response = "Hit for {}, received {} damage".format(dmg, received_dmg)
+                received_dmg = enemy.do_attack(enemy)
+                hero.hp_current -= received_dmg
+                db.quest.heroes.remove({'name':hero.name})
+                db.quest.heroes.insert(hero.encode())
+                if hero.hp_current <= 0:
+                    db.quest.encounter.drop()
+                    response = 'You have been slain!'
+                else:
+                    db.quest.encounter.remove({'name':enemy.name})
+                    db.quest.encounter.insert(enemy.encode())
+                    response = "Hit for {}, received {} damage".format(dmg, received_dmg)
     elif args[0] == "drop":
         if len(args) > 1:
             if args[1] == 'heroes':
