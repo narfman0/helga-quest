@@ -26,6 +26,11 @@ class TestResults(unittest.TestCase):
         leveler.do_level()
         self.assertEquals(leveler.level, 7)
 
+    def test_attack(self):
+        action = core.Action('Atk', attack=5)
+        dmg = self.roger.do_attack(self.enemy, attack_bonus=action.attack)
+        self.assertTrue(dmg > 9)
+
 
 if __name__ == '__main__':
     unittest.main()

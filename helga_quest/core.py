@@ -1,32 +1,56 @@
 """ Core classes to define rpg """
-import math, jaraco.modb as encoder, random
+import math, random, re
+
+class Action(object):
+    """ A special attack a Being may execute against another Being """
+    def __init__(self, name='Hero', description='', hp=0, attack=0, defense=0):
+        self.name = name
+        self.description = description
+        self.hp = hp
+        self.attack = attack
+        self.defense = defense
+
+    def create_response(self, target, dmg):
+        """ Create the string response the action should produce against the
+        enemy. e.g. if the enemy's name is Phil, and his attack is Anthropy,
+        the description might be
+        'Phil's anthropy attack strikes to {target}'s heart, causing {dmg}
+        damage'
+        """
+        result = self.description
+        kwargs = {}
+        if re.search('{\s*dmg\s*}', result, re.I):
+            kwargs['dmg']=dmg
+        if re.search('{\s*target\s*}', result, re.I):
+            kwargs['target']=target.name
+        if re.search('{\s*name\s*}', result, re.I):
+            kwargs['name']=self.name
+        return result.format(**kwargs)
+
+    def __unicode__(self):
+        """ Unicode representation of action """
+        return 'Action for {}, description: {}'.format(self.name, self.description)
+
+    def __repr__(self):
+        """ String representation of action """
+        return self.__unicode__()
+
 
 class Being(object):
     """ Something that lives and breathes and can die """
-    def __init__(self, name='Hero', hp=1, mana=1, attack=1, defense=1,
-                 magic=1, mr=1, level=1, xp=0):
+    def __init__(self, name='Hero', hp=1, attack=1, defense=1, level=1, xp=0):
         self.hp = hp
-        self.mana = mana
         self.attack = attack
         self.defense = defense
-        self.magic = magic
-        self.mr = mr
         self.name = name
         self.level = level
         self.xp = xp
         self.hp_current = self.hp
-        self.mana_current = self.mana
 
-    def do_attack(self, target):
+    def do_attack(self, target, attack_bonus=0, defense_bonus=0):
         """ Weapon attack, returns dmg to be received. """
-        return round(self.attack * (100. / (100. + target.defense)), 1)
-
-    def do_magic(self, target):
-        """ Magic attack, returns dmg to be received. """
-        if self.mana > 0:
-            power = random.randint(50, 100)
-            self.mana -= (power / 10)
-            return self.magic * ((100. + power) / (100. + target.mr))
+        return round((self.attack + attack_bonus) *
+                     (100. / (100. + target.defense + defense_bonus)), 1)
 
     def killed(self, target):
         """ Handle killing something, first get xp then check level """
@@ -38,26 +62,17 @@ class Being(object):
         while self.xp > Being.xp_to_level(self.level + 1):
             self.level += 1
             self.hp += random.randint(5, 10)
-            self.mana += random.randint(5, 10)
             self.attack += random.randint(0, 3)
             self.defense += random.randint(0, 3)
-            self.magic += random.randint(0, 3)
-            self.mr += random.randint(0, 3)
             self.hp_current = self.hp
-            self.mana_current = self.mana
 
     def __unicode__(self):
+        """ String representation of being """
         return '{} HP: {}/{} Level: {}'.format(self.name, self.hp_current, self.hp, self.level)
 
     def __repr__(self):
+        """ String representation of being """
         return self.__unicode__()
-
-    def encode(self):
-        return encoder.encode(self)
-
-    @staticmethod
-    def decode(target):
-        return encoder.decode(target)
 
     @staticmethod
     def xp_to_level(level):
