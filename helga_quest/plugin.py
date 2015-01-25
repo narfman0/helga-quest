@@ -8,7 +8,9 @@ Usage: !quest (action|adventure|attack|mob|rest)\
 !quest adventure\
 helga> You've encountered a Assault Shaker!\
 !quest attack\
-helga> You strike for 1 damage, Assault Shaker peppers Hero for 5.9 damage"""
+helga> You strike for 1 damage, Assault Shaker peppers Hero for 5.9 damage\
+!quest rest\
+helga> You feel refreshed..."""
 
 
 @command('quest', help=_help_text, shlex=True)
