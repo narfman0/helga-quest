@@ -24,9 +24,11 @@ def action(mod, statsstr):
     action = Action(**stats)
     if mod == 'add':
         db.quest.actions.insert(encode(action))
+        response = 'Action added'
     elif mod == 'remove':
         db.quest.actions.remove({'name':action.name,
                                  'description':action.description})
+        response = 'Action removed'
     else:
         response = 'I do not understand %s' % mod
     return response

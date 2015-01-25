@@ -2,7 +2,7 @@ from helga.db import db
 from helga_quest.core import Being
 from helga_quest.util import encode
 
-VERSION = (1, 0, 0)
+VERSION = (1, 0, 1)
 
 __version__ = '.'.join([str(v) for v in VERSION])
 
