@@ -3,12 +3,14 @@ import math, random, re
 
 class Action(object):
     """ A special attack a Being may execute against another Being """
-    def __init__(self, name='Hero', description='', hp=0, attack=0, defense=0):
+    def __init__(self, name='Hero', description='{target} took {dmg} damage.',
+                 hp=0, attack=0, defense=0, speed=0):
         self.name = name
         self.description = description
         self.hp = hp
         self.attack = attack
         self.defense = defense
+        self.speed = speed
 
     def create_response(self, target, dmg):
         """ Create the string response the action should produce against the
@@ -38,10 +40,12 @@ class Action(object):
 
 class Being(object):
     """ Something that lives and breathes and can die """
-    def __init__(self, name='Hero', hp=1, attack=1, defense=1, level=1, xp=0):
+    def __init__(self, name='Hero', hp=1, attack=1, defense=1, speed=50,
+                 level=1, xp=0):
         self.hp = hp
         self.attack = attack
         self.defense = defense
+        self.speed = speed
         self.name = name
         self.level = level
         self.xp = xp
@@ -65,6 +69,12 @@ class Being(object):
             self.attack += random.randint(0, 3)
             self.defense += random.randint(0, 3)
             self.hp_current = self.hp
+
+    def initiative_roll(self, target_speed):
+        """ Roll for initiative per round, returns true if won """
+        self_roll = self.speed + random.gauss(50, 16)
+        target_roll = target_speed + random.gauss(50, 16)
+        return self_roll > target_roll
 
     def __unicode__(self):
         """ String representation of being """

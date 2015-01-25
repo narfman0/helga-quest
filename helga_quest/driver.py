@@ -69,8 +69,39 @@ def mob(mod, statsstr):
     being = Being(**stats)
     if mod == 'add':
         db.quest.enemies.insert(encode(being))
+        response = 'Mob added'
     elif mod == 'remove':
         db.quest.enemies.remove({'name':being.name})
+        response = 'Mob removed'
+    return response
+
+def execute_attack_enemy(response, hero, enemy, enemy_action):
+    """ Execute enemy attack """
+    received_dmg = enemy.do_attack(hero, attack_bonus=enemy_action.attack)
+    hero.hp_current -= received_dmg
+    db.quest.heroes.remove({'name':hero.name})
+    db.quest.heroes.insert(encode(hero))
+    response += enemy_action.create_response(hero, received_dmg) + ' '
+    if hero.hp_current <= 0:
+        db.quest.encounter.drop()
+        response += '\nYou have been slain!'
+    else:
+        db.quest.encounter.remove({'name':enemy.name})
+        db.quest.encounter.insert(encode(enemy))
+    return response
+
+def execute_attack_hero(response, hero, enemy, enemy_action):
+    """ Execute hero attack """
+    dmg = hero.do_attack(enemy, defense_bonus=enemy_action.defense)
+    enemy.hp_current -= dmg
+    response += 'You strike for %d damage. ' % dmg
+    if enemy.hp_current <= 0:
+        hero.killed(enemy)
+        db.quest.heroes.remove({'name':hero.name})
+        db.quest.heroes.insert(encode(hero))
+        db.quest.encounter.remove({'name':enemy.name})
+        template = "You've slain the {}, and earned {} xp!"
+        response += template.format(enemy.name, enemy.xp)
     return response
 
 def attack():
@@ -81,38 +112,22 @@ def attack():
     elif not in_encounter:
         response = "There is no enemy to attack!"
     else:
+        response = ''
         # grab enemy action to have defense bonus on hand
-        action = None
         query = db.quest.actions.find({'name':enemy.name})
         if query.count() > 0:
             action = decode(random_cursor(query))
-        defense_bonus = action.defense if action else 0
-        dmg = hero.do_attack(enemy, defense_bonus=defense_bonus)
-        enemy.hp_current -= dmg
-        response = 'You strike for %d damage, ' % dmg
-        if enemy.hp_current <= 0:
-            hero.killed(enemy)
-            db.quest.heroes.remove({'name':hero.name})
-            db.quest.heroes.insert(encode(hero))
-            db.quest.encounter.remove({'name':enemy.name})
-            template = "you've slain the {}, and earned {} xp!"
-            response += template.format(enemy.name, enemy.xp)
         else:
-            attack_bonus = action.attack if action else 0
-            received_dmg = enemy.do_attack(hero, attack_bonus=attack_bonus)
-            hero.hp_current -= received_dmg
-            db.quest.heroes.remove({'name':hero.name})
-            db.quest.heroes.insert(encode(hero))
-            if action:
-                response += action.create_response(hero, received_dmg)
-            else:
-                response += "and received {} damage.".format(dmg, received_dmg)
-            if hero.hp_current <= 0:
-                db.quest.encounter.drop()
-                response += '\nYou have been slain!'
-            else:
-                db.quest.encounter.remove({'name':enemy.name})
-                db.quest.encounter.insert(encode(enemy))
+            action = Action(name=enemy.name)
+        if hero.initiative_roll(enemy.speed + action.speed):
+            response += execute_attack_hero(response, hero, enemy, action)
+            if enemy.hp_current > 0:
+                response += execute_attack_enemy(response, hero, enemy, action)
+        else:
+            response += execute_attack_enemy(response, hero, enemy, action)
+            if hero.hp_current > 0:
+                response += execute_attack_hero(response, hero, enemy, action)
+
     return response
 
 def drop(mod=''):
