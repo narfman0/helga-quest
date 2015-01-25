@@ -7,4 +7,4 @@ VERSION = (1, 0, 0)
 __version__ = '.'.join([str(v) for v in VERSION])
 
 if db.quest.heroes.count() == 0:
-    db.quest.heroes.insert(encode(Being()))
+    db.quest.heroes.insert(encode(Being(name='Hero', attack=5, hp=5, defense=20)))

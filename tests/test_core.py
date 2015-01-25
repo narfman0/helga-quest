@@ -23,7 +23,8 @@ class TestResults(unittest.TestCase):
     def test_level(self):
         leveler = core.Being('Pwrlvl')
         leveler.xp = 5000
-        leveler.do_level()
+        while leveler.can_levelup():
+            leveler.levelup()
         self.assertEquals(leveler.level, 7)
 
     def test_attack(self):

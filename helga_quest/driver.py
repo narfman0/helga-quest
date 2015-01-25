@@ -1,9 +1,8 @@
 """ Driver for core gameplay """
 from helga.db import db
 from helga_quest.core import Action, Being
-from random import random
 from helga_quest.util import encode, decode, random_cursor, current_state
-import json
+import json, random
 
 def status():
     """ Return the current status of the game as string """
@@ -47,8 +46,11 @@ def adventure(mob=''):
         else:
             query = db.quest.enemies.find()
         enemy = decode(random_cursor(query))
+        target_level = int(max(1, hero.level * (1 + random.gauss(0, .05))))
+        enemy.scale_level(target_level)
         db.quest.encounter.insert(encode(enemy))
-        response = "You've encountered a {}!".format(enemy.name)
+        template = "You've encountered a {} level {}!"
+        response = template.format(enemy.name, enemy.level)
     return response
 
 def rest():
@@ -75,13 +77,13 @@ def mob(mod, statsstr):
         response = 'Mob removed'
     return response
 
-def execute_attack_enemy(response, hero, enemy, enemy_action):
+def execute_attack_enemy(hero, enemy, enemy_action):
     """ Execute enemy attack """
     received_dmg = enemy.do_attack(hero, attack_bonus=enemy_action.attack)
     hero.hp_current -= received_dmg
     db.quest.heroes.remove({'name':hero.name})
     db.quest.heroes.insert(encode(hero))
-    response += enemy_action.create_response(hero, received_dmg) + ' '
+    response = enemy_action.create_response(hero, received_dmg) + ' '
     if hero.hp_current <= 0:
         db.quest.encounter.drop()
         response += '\nYou have been slain!'
@@ -90,13 +92,17 @@ def execute_attack_enemy(response, hero, enemy, enemy_action):
         db.quest.encounter.insert(encode(enemy))
     return response
 
-def execute_attack_hero(response, hero, enemy, enemy_action):
+def execute_attack_hero(hero, enemy, enemy_action):
     """ Execute hero attack """
     dmg = hero.do_attack(enemy, defense_bonus=enemy_action.defense)
     enemy.hp_current -= dmg
-    response += 'You strike for %d damage. ' % dmg
+    db.quest.encounter.remove({'name':enemy.name})
+    db.quest.encounter.insert(encode(enemy))
+    response = 'You strike for %d damage. ' % dmg
     if enemy.hp_current <= 0:
-        hero.killed(enemy)
+        hero.xp += enemy.xp
+        while hero.can_levelup():
+            hero.levelup()
         db.quest.heroes.remove({'name':hero.name})
         db.quest.heroes.insert(encode(hero))
         db.quest.encounter.remove({'name':enemy.name})
@@ -120,13 +126,13 @@ def attack():
         else:
             action = Action(name=enemy.name)
         if hero.initiative_roll(enemy.speed + action.speed):
-            response += execute_attack_hero(response, hero, enemy, action)
+            response += execute_attack_hero(hero, enemy, action)
             if enemy.hp_current > 0:
-                response += execute_attack_enemy(response, hero, enemy, action)
+                response += execute_attack_enemy(hero, enemy, action)
         else:
-            response += execute_attack_enemy(response, hero, enemy, action)
+            response += execute_attack_enemy(hero, enemy, action)
             if hero.hp_current > 0:
-                response += execute_attack_hero(response, hero, enemy, action)
+                response += execute_attack_hero(hero, enemy, action)
 
     return response
 
@@ -134,6 +140,7 @@ def drop(mod=''):
     """ Drop items from database """
     if not mod:
         db.quest.drop()
+        db.quest.heroes.insert(encode(Being()))
         response = "Quest database dropped, so sad"
     elif mod == 'heroes':
         db.quest.heroes.drop()

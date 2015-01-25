@@ -19,15 +19,14 @@ class Action(object):
         'Phil's anthropy attack strikes to {target}'s heart, causing {dmg}
         damage'
         """
-        result = self.description
         kwargs = {}
-        if re.search('{\s*dmg\s*}', result, re.I):
+        if re.search('{\s*dmg\s*}', self.description, re.I):
             kwargs['dmg']=dmg
-        if re.search('{\s*target\s*}', result, re.I):
+        if re.search('{\s*target\s*}', self.description, re.I):
             kwargs['target']=target.name
-        if re.search('{\s*name\s*}', result, re.I):
+        if re.search('{\s*name\s*}', self.description, re.I):
             kwargs['name']=self.name
-        return result.format(**kwargs)
+        return self.description.format(**kwargs)
 
     def __unicode__(self):
         """ Unicode representation of action """
@@ -40,7 +39,7 @@ class Action(object):
 
 class Being(object):
     """ Something that lives and breathes and can die """
-    def __init__(self, name='Hero', hp=1, attack=1, defense=1, speed=50,
+    def __init__(self, name='Hero', hp=5, attack=1, defense=1, speed=50,
                  level=1, xp=0):
         self.hp = hp
         self.attack = attack
@@ -56,19 +55,34 @@ class Being(object):
         return round((self.attack + attack_bonus) *
                      (100. / (100. + target.defense + defense_bonus)), 1)
 
-    def killed(self, target):
-        """ Handle killing something, first get xp then check level """
-        self.xp += target.xp
-        self.do_level()
+    def can_levelup(self):
+        """ Return true if being has enough experience to level up """
+        return self.xp > Being.xp_to_level(self.level + 1)
 
-    def do_level(self):
-        """ Check if being should level up, do it if so """
-        while self.xp > Being.xp_to_level(self.level + 1):
-            self.level += 1
-            self.hp += random.randint(5, 10)
-            self.attack += random.randint(0, 3)
-            self.defense += random.randint(0, 3)
-            self.hp_current = self.hp
+    def levelup(self):
+        """ Level up scale stats appropriately """
+        self.level += 1
+        self.hp += random.randint(5, 10)
+        self.attack += random.randint(0, 3)
+        self.defense += random.randint(0, 3)
+        self.hp_current = self.hp
+
+    def leveldown(self):
+        """ Level down being """
+        self.level -= 1
+        self.hp -= random.randint(5, 10)
+        self.attack -= random.randint(0, 3)
+        self.defense -= random.randint(0, 3)
+        self.hp_current = self.hp
+
+    def scale_level(self, target_level):
+        """ Scale difficulty to balance mob to target level """
+        self.xp = self.xp / self.level * target_level
+        self.xp = int(self.xp * (1 + random.gauss(0, .05)))
+        while target_level > self.level:
+            self.levelup()
+        while target_level < self.level:
+            self.leveldown()
 
     def initiative_roll(self, target_speed):
         """ Roll for initiative per round, returns true if won """
