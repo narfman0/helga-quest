@@ -1,6 +1,12 @@
 helga-quest
 ===========
 
+.. image:: https://badge.fury.io/py/helga-quest.png
+    :target: https://badge.fury.io/py/helga-quest
+
+.. image:: https://travis-ci.org/narfman0/helga-quest.png?branch=master
+    :target: https://travis-ci.org/narfman0/helga-quest
+
 Collaborative RPG base on user driven content
 
 Purpose

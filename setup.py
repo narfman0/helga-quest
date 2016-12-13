@@ -1,12 +1,6 @@
-from pip.req import parse_requirements
 from setuptools import setup, find_packages
-
-from pip.req import parse_requirements
 from helga_quest import __version__ as version
 
-requirements = [
-    str(req.req) for req in parse_requirements('requirements.txt')
-]
 
 setup(
     name='helga-quest',
@@ -29,8 +23,8 @@ setup(
     include_package_data=True,
     py_modules=['helga_quest.plugin'],
     zip_safe=True,
-    install_requires=requirements,
-    test_suite='tests.test_quest',
+    install_requires=['helga', 'jaraco.modb'],
+    test_suite='tests',
     entry_points = dict(
         helga_plugins=[
             'quest = helga_quest.plugin:quest',

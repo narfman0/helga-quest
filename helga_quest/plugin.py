@@ -1,5 +1,10 @@
+from helga.db import db
 from helga.plugins import command
+
 from helga_quest import driver
+from helga_quest.core import Being
+from helga_quest.util import encode
+
 
 _help_text = """Collaboratively play an RPG from user driven content \
 Usage: !quest (action|adventure|attack|mob|rest)\
@@ -11,6 +16,10 @@ helga> You've encountered a Assault Shaker!\
 helga> You strike for 1 damage, Assault Shaker peppers Hero for 5.9 damage\
 !quest rest\
 helga> You feel refreshed..."""
+
+
+if db.quest.heroes.count() == 0:
+    db.quest.heroes.insert(encode(Being(name='Hero', attack=5, hp=5, defense=20)))
 
 
 @command('quest', help=_help_text, shlex=True)
